@@ -1,0 +1,168 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "property_hunter"
+version = "0.1.0"
+description = "Property hunter"
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.12"
+authors = [
+    { name = "Pawel Choinski", email = "choinski.pawel@wp.pl" },
+]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Typing :: Typed",
+]
+keywords = []
+dependencies = [
+    "fastapi>=0.115.0",
+    "httpx>=0.28.0",
+    "notion-client>=2.3.0",
+    "pydantic>=2.10.0",
+    "pydantic-ai>=0.0.19",
+    "pydantic-settings>=2.7.0",
+    "pyproj>=3.7.0",
+    "shapely>=2.0.0",
+    "sqlmodel>=0.0.22",
+    "streamlit>=1.41.0",
+    "tenacity>=9.0.0",
+    "typer>=0.12.0",
+    "uvicorn>=0.34.0",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=9.0.0",
+    "pytest-cov>=7.0.0",
+    "ruff>=0.14.14",
+    "ty>=0.0.14",
+    "hatch>=1.16.3",
+    "prek>=0.1.0",
+    "pysentry-rs>=0.1.0",
+]
+docs = [
+    "mkdocs>=1.6.0",
+    "mkdocs-material>=9.7.0",
+    "mkdocstrings-python>=2.0.1",
+]
+
+[project.urls]
+Homepage = "https://github.com/pwl-ch/property-hunter"
+Documentation = "https://pwl-ch.github.io/property-hunter"
+Repository = "https://github.com/pwl-ch/property-hunter"
+Issues = "https://github.com/pwl-ch/property-hunter/issues"
+Changelog = "https://github.com/pwl-ch/property-hunter/blob/main/CHANGELOG.md"
+
+[project.scripts]
+property_hunter = "property_hunter.cli:app"
+
+# =============================================================================
+# Hatch
+# =============================================================================
+
+[tool.hatch.build.targets.sdist]
+include = [
+    "/src",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/property_hunter"]
+
+# Matrix testing across Python versions
+[tool.hatch.envs.test]
+
+[[tool.hatch.envs.test.matrix]]
+python = ["3.12", "3.13"]
+
+# =============================================================================
+# Ruff
+# =============================================================================
+
+[tool.ruff]
+target-version = "py312"
+line-length = 88
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = [
+    "E",      # pycodestyle errors
+    "W",      # pycodestyle warnings
+    "F",      # Pyflakes
+    "I",      # isort
+    "B",      # flake8-bugbear
+    "C4",     # flake8-comprehensions
+    "UP",     # pyupgrade
+    "ARG",    # flake8-unused-arguments
+    "SIM",    # flake8-simplify
+    "TCH",    # flake8-type-checking
+    "PTH",    # flake8-use-pathlib
+    "ERA",    # eradicate
+    "RUF",    # Ruff-specific rules
+]
+
+[tool.ruff.lint.isort]
+known-first-party = ["property_hunter"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**/*.py" = ["ARG001"]
+
+# =============================================================================
+# ty (Astral type checker)
+# =============================================================================
+
+[tool.ty.src]
+include = ["**/*.py"]
+
+# =============================================================================
+# Pytest
+# =============================================================================
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+addopts = [
+    "-ra",
+    "-q",
+    "--strict-markers",
+    "--strict-config",
+]
+markers = [
+    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+]
+
+# =============================================================================
+# Coverage
+# =============================================================================
+
+[tool.coverage.run]
+source = ["src/property_hunter"]
+branch = true
+parallel = true
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+    "if TYPE_CHECKING:",
+    "@abstractmethod",
+]
+show_missing = true
+
+# =============================================================================
+# git-cliff (Changelog generation)
+# =============================================================================
+
+[tool.git-cliff]
+config = "cliff.toml"

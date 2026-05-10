@@ -13,7 +13,7 @@ class ULDKParcelLocator:
 
     def __init__(
         self,
-        base_url: str = "https://uldk.gugik.gov.pl/",
+        base_url: str,
         timeout_seconds: float = 15.0,
     ) -> None:
         """Create a ULDK client."""

@@ -12,6 +12,7 @@ from property_hunter.application.ports import (
 )
 from property_hunter.domain.geo import build_external_links
 from property_hunter.domain.models import AnalyzedProperty, CapturedListing, SyncStatus
+from property_hunter.settings import Settings, get_settings
 
 
 class AnalyzeListingUseCase:
@@ -24,6 +25,7 @@ class AnalyzeListingUseCase:
         regulatory_agent: RegulatoryAgent,
         parcel_locator: ParcelLocator | None = None,
         utility_source: UtilitySource | None = None,
+        settings: Settings | None = None,
     ) -> None:
         """Create an analyze-listing use case."""
         self.repository = repository
@@ -31,6 +33,7 @@ class AnalyzeListingUseCase:
         self.regulatory_agent = regulatory_agent
         self.parcel_locator = parcel_locator
         self.utility_source = utility_source
+        self.settings = settings or get_settings()
 
     def execute(self, listing: CapturedListing) -> AnalyzedProperty:
         """Analyze and persist a captured listing."""
@@ -56,7 +59,11 @@ class AnalyzeListingUseCase:
             geometry=geometry,
             utilities=utilities,
             regulatory_summary=regulatory_summary,
-            external_links=build_external_links(extracted.parcel_id, geometry),
+            external_links=build_external_links(
+                extracted.parcel_id,
+                geometry,
+                self.settings,
+            ),
         )
         return self.repository.save(analyzed)
 

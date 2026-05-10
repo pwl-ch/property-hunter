@@ -4,10 +4,7 @@ from pathlib import Path
 
 from fastapi import Depends, FastAPI, Header, HTTPException, Response, status
 
-from property_hunter.adapters.agents import (
-    HeuristicExtractionAgent,
-    HeuristicRegulatoryAgent,
-)
+from property_hunter.adapters.agents import create_listing_agents
 from property_hunter.adapters.kiut import KIUTUtilitySource
 from property_hunter.adapters.notion import NotionPropertySync
 from property_hunter.adapters.sqlite import SQLitePropertyRepository
@@ -26,14 +23,17 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     """Create the local PropertyHunter FastAPI app."""
     settings = settings or get_settings()
     repository = SQLitePropertyRepository(Path(settings.db_path))
+    extraction_agent, regulatory_agent = create_listing_agents(settings)
     analyze_use_case = AnalyzeListingUseCase(
         repository=repository,
-        extraction_agent=HeuristicExtractionAgent(),
-        regulatory_agent=HeuristicRegulatoryAgent(),
+        extraction_agent=extraction_agent,
+        regulatory_agent=regulatory_agent,
         parcel_locator=ULDKParcelLocator(
-            timeout_seconds=settings.request_timeout_seconds
+            base_url=settings.uldk_base_url,
+            timeout_seconds=settings.request_timeout_seconds,
         ),
         utility_source=KIUTUtilitySource(),
+        settings=settings,
     )
     export_use_case = ExportPropertiesUseCase(repository)
 

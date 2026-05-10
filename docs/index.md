@@ -32,9 +32,18 @@ Property hunter provides a command-line interface:
 # Show version
 property_hunter --version
 
-# Say hello
-property_hunter hello World
+# Serve the local API
+property_hunter serve
+
+# Print the browser userscript
+property_hunter userscript
 ```
+
+### Local LLM
+
+By default, analysis uses Pydantic AI with an LM Studio server at
+`http://127.0.0.1:1234/v1` and model `google/gemma-4-e4b`. See
+[Local LLM Agents](agents.md) for setup and offline mode.
 
 ## Development
 

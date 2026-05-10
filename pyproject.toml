@@ -137,6 +137,7 @@ addopts = [
 ]
 markers = [
     "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+    "llm_eval: marks tests that call a live local LLM server",
 ]
 
 # =============================================================================

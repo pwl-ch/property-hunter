@@ -3,6 +3,7 @@
 from urllib.parse import quote
 
 from property_hunter.domain.models import ExternalLinks, ParcelGeometry, UtilityStatus
+from property_hunter.settings import Settings, get_settings
 
 
 def classify_utility_distance(distance_meters: float | None) -> UtilityStatus:
@@ -32,6 +33,7 @@ def classify_utility_distance(distance_meters: float | None) -> UtilityStatus:
 def build_external_links(
     parcel_id: str | None,
     geometry: ParcelGeometry | None,
+    settings: Settings | None = None,
 ) -> ExternalLinks:
     """Build map and cadastral links from known parcel data.
 
@@ -47,20 +49,26 @@ def build_external_links(
     ExternalLinks
         Links that can be displayed in the API or dashboard.
     """
+    settings = settings or get_settings()
     google_maps = None
     geoportal = None
     if geometry is not None:
         latitude, longitude = geometry.centroid_wgs84
-        google_maps = f"https://www.google.com/maps?q={latitude:.7f},{longitude:.7f}"
-        geoportal = (
-            "https://mapy.geoportal.gov.pl/imap/Imgp_2.html"
-            f"?identifyParcel={quote(geometry.parcel_id)}"
+        google_maps = settings.google_maps_url_template.format(
+            latitude=f"{latitude:.7f}",
+            longitude=f"{longitude:.7f}",
+            parcel_id=quote(geometry.parcel_id),
+        )
+        geoportal = settings.geoportal_url_template.format(
+            latitude=f"{latitude:.7f}",
+            longitude=f"{longitude:.7f}",
+            parcel_id=quote(geometry.parcel_id),
         )
 
     uldk = None
     if parcel_id:
         uldk = (
-            "https://uldk.gugik.gov.pl/"
+            f"{settings.uldk_base_url}"
             f"?request=GetParcelById&id={quote(parcel_id)}&result=geom_wkt"
         )
 

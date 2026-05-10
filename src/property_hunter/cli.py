@@ -92,12 +92,13 @@ def export(
 @app.command()
 def userscript(output: Annotated[Path | None, typer.Option()] = None) -> None:
     """Print or write the browser userscript."""
-    from property_hunter.adapters.userscript import USERSCRIPT
+    from property_hunter.adapters.userscript import render_userscript
 
+    userscript_source = render_userscript(get_settings())
     if output is None:
-        typer.echo(USERSCRIPT)
+        typer.echo(userscript_source)
         return
-    output.write_text(USERSCRIPT, encoding="utf-8")
+    output.write_text(userscript_source, encoding="utf-8")
     typer.echo(f"Wrote userscript to {output}")
 
 

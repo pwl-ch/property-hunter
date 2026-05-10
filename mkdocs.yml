@@ -60,6 +60,7 @@ markdown_extensions:
 
 nav:
   - Home: index.md
+  - Local LLM Agents: agents.md
   - PropertyHunter AI Plan: propertyhunter-ai-plan.md
   - API Reference: api.md
   - Contributing: contributing.md

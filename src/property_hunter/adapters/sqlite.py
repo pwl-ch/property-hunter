@@ -1,9 +1,12 @@
 """SQLite repository adapter."""
 
+import logging
 import sqlite3
 from pathlib import Path
 
 from property_hunter.domain.models import AnalyzedProperty
+
+logger = logging.getLogger(__name__)
 
 
 class SQLitePropertyRepository:
@@ -29,6 +32,7 @@ class SQLitePropertyRepository:
                 """,
                 (property_.id, property_.created_at.isoformat(), payload),
             )
+        logger.info("Saved property id=%s to sqlite path=%s", property_.id, self.path)
         return property_
 
     def get(self, property_id: str) -> AnalyzedProperty | None:
@@ -39,6 +43,11 @@ class SQLitePropertyRepository:
                 (property_id,),
             ).fetchone()
         if row is None:
+            logger.info(
+                "Property id=%s not found in sqlite path=%s",
+                property_id,
+                self.path,
+            )
             return None
         return AnalyzedProperty.model_validate_json(row["payload"])
 

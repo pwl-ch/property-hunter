@@ -1,5 +1,6 @@
 """Agent adapters for extraction and regulatory summaries."""
 
+import logging
 import re
 from typing import Protocol
 
@@ -14,6 +15,8 @@ from property_hunter.domain.models import (
     RegulatorySummary,
 )
 from property_hunter.settings import Settings
+
+logger = logging.getLogger(__name__)
 
 
 class _AgentRunResult[OutputT](Protocol):
@@ -30,6 +33,7 @@ class HeuristicExtractionAgent:
 
     def extract(self, listing: CapturedListing) -> ExtractedProperty:
         """Extract common Polish real-estate facts using deterministic rules."""
+        logger.info("Running heuristic extraction for %s", listing.source_site)
         text = f"{listing.title}\n{listing.raw_text}"
         price = _first_number(text, r"([\d\s]+(?:[,.]\d+)?)\s*(?:zł|pln)")
         area = _first_number(text, r"([\d\s]+(?:[,.]\d+)?)\s*m(?:2|²|kw)")
@@ -61,6 +65,7 @@ class HeuristicRegulatoryAgent:
 
     def summarize(self, listing: CapturedListing) -> RegulatorySummary:
         """Summarize zoning phrases found in the listing text."""
+        logger.info("Running heuristic regulatory summary for %s", listing.source_site)
         text = listing.raw_text
         summary = _regulatory_sentence(text) or "No regulatory information detected."
         risks = []
@@ -105,6 +110,7 @@ class PydanticAIExtractionAgent:
 
     def extract(self, listing: CapturedListing) -> ExtractedProperty:
         """Extract listing facts through Pydantic AI structured output."""
+        logger.info("Running Pydantic AI extraction for %s", listing.source_site)
         result = self.agent.run_sync(_listing_prompt(listing))
         return result.output
 
@@ -138,6 +144,10 @@ class PydanticAIRegulatoryAgent:
 
     def summarize(self, listing: CapturedListing) -> RegulatorySummary:
         """Summarize regulatory listing text through Pydantic AI."""
+        logger.info(
+            "Running Pydantic AI regulatory summary for %s",
+            listing.source_site,
+        )
         result = self.agent.run_sync(_listing_prompt(listing))
         return result.output
 
@@ -158,7 +168,13 @@ def create_listing_agents(
         Agent pair used by the analyze-listing use case.
     """
     if settings.agent_mode == "heuristic":
+        logger.info("Creating heuristic listing agents")
         return HeuristicExtractionAgent(), HeuristicRegulatoryAgent()
+    logger.info(
+        "Creating LLM listing agents provider=%s model=%s",
+        settings.llm_provider,
+        settings.model_name,
+    )
     return (
         PydanticAIExtractionAgent(settings=settings),
         PydanticAIRegulatoryAgent(settings=settings),

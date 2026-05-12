@@ -63,6 +63,29 @@ PROPERTY_HUNTER_RUN_LLM_EVALS=1 uv run pytest -m llm_eval
 The evaluation checks whether the agents recover key facts such as price, area,
 price per square meter, city, and MPZP information.
 
+## Dashboard Agent Testing
+
+Run the dashboard to test the configured agents interactively on fresh data:
+
+```bash
+uv run property_hunter dashboard
+```
+
+Use the **Agent test** panel to either paste listing text or provide a listing
+URL. URL mode fetches the page locally, keeps the raw HTML snapshot, converts
+visible HTML text into listing content, and runs the extraction and regulatory
+agents without saving the result.
+
+## Logging
+
+PropertyHunter logs API requests, agent selection, analysis progress, adapter
+failures, and persistence events through Python's standard `logging` module.
+Set the level with:
+
+```bash
+PROPERTY_HUNTER_LOG_LEVEL=DEBUG uv run property_hunter serve
+```
+
 ## References
 
 - [Pydantic AI agents](https://pydantic.dev/docs/ai/core-concepts/agent/)

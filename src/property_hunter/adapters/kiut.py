@@ -1,7 +1,11 @@
 """KIUT/GESUT utility assessment adapter."""
 
+import logging
+
 from property_hunter.domain.geo import classify_utility_distance
 from property_hunter.domain.models import ParcelGeometry, UtilityAssessment
+
+logger = logging.getLogger(__name__)
 
 
 class KIUTUtilitySource:
@@ -14,6 +18,7 @@ class KIUTUtilitySource:
         orchestration contract live while avoiding false precision until usable
         feature access is configured.
         """
+        logger.info("Returning placeholder KIUT utility assessment")
         _ = geometry
         return [
             UtilityAssessment(

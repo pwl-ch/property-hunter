@@ -1,11 +1,15 @@
 """GUGiK ULDK parcel lookup adapter."""
 
+import logging
+
 import httpx
 from pyproj import Transformer
 from shapely import wkt
 from tenacity import retry, stop_after_attempt, wait_exponential
 
 from property_hunter.domain.models import ParcelGeometry
+
+logger = logging.getLogger(__name__)
 
 
 class ULDKParcelLocator:
@@ -28,6 +32,7 @@ class ULDKParcelLocator:
     @retry(wait=wait_exponential(multiplier=0.5, max=4), stop=stop_after_attempt(3))
     def locate(self, parcel_id: str) -> ParcelGeometry | None:
         """Resolve a parcel id to geometry."""
+        logger.info("Resolving parcel geometry parcel_id=%s", parcel_id)
         response = httpx.get(
             self.base_url,
             params={
@@ -40,6 +45,7 @@ class ULDKParcelLocator:
         response.raise_for_status()
         geometry_wkt = _extract_wkt(response.text)
         if geometry_wkt is None:
+            logger.info("ULDK returned no geometry for parcel_id=%s", parcel_id)
             return None
         geometry = wkt.loads(geometry_wkt)
         centroid = geometry.centroid

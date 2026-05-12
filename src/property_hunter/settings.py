@@ -45,6 +45,7 @@ class Settings(BaseSettings):
     )
     model_name: str = "google/gemma-4-e4b"
     llm_api_key: str = "lm-studio"
+    log_level: str = "INFO"
     api_token: str | None = None
     notion_token: str | None = None
     notion_database_id: str | None = None

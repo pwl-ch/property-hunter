@@ -1,5 +1,6 @@
 """PropertyHunter application use cases."""
 
+import logging
 from uuid import uuid4
 
 from property_hunter.application.ports import (
@@ -13,6 +14,8 @@ from property_hunter.application.ports import (
 from property_hunter.domain.geo import build_external_links
 from property_hunter.domain.models import AnalyzedProperty, CapturedListing, SyncStatus
 from property_hunter.settings import Settings, get_settings
+
+logger = logging.getLogger(__name__)
 
 
 class AnalyzeListingUseCase:
@@ -37,7 +40,16 @@ class AnalyzeListingUseCase:
 
     def execute(self, listing: CapturedListing) -> AnalyzedProperty:
         """Analyze and persist a captured listing."""
+        logger.info("Analyzing listing from %s", listing.source_site)
         extracted = self.extraction_agent.extract(listing)
+        logger.info(
+            "Extracted listing facts",
+            extra={
+                "has_parcel_id": extracted.parcel_id is not None,
+                "has_price": extracted.price is not None,
+                "has_area": extracted.area_sqm is not None,
+            },
+        )
         regulatory_summary = self.regulatory_agent.summarize(listing)
         geometry = None
         utilities = []
@@ -45,11 +57,19 @@ class AnalyzeListingUseCase:
             try:
                 geometry = self.parcel_locator.locate(extracted.parcel_id)
             except Exception:
+                logger.exception(
+                    "Parcel lookup failed for parcel_id=%s",
+                    extracted.parcel_id,
+                )
                 geometry = None
         if geometry is not None and self.utility_source is not None:
             try:
                 utilities = self.utility_source.assess(geometry)
             except Exception:
+                logger.exception(
+                    "Utility assessment failed for parcel_id=%s",
+                    geometry.parcel_id,
+                )
                 utilities = []
 
         analyzed = AnalyzedProperty(
@@ -65,7 +85,9 @@ class AnalyzeListingUseCase:
                 self.settings,
             ),
         )
-        return self.repository.save(analyzed)
+        saved = self.repository.save(analyzed)
+        logger.info("Saved analyzed property id=%s", saved.id)
+        return saved
 
 
 class ExportPropertiesUseCase:
@@ -92,13 +114,16 @@ class SyncNotionUseCase:
         """Sync a property and persist its resulting Notion page id."""
         property_ = self.repository.get(property_id)
         if property_ is None:
+            logger.info("Notion sync skipped for missing property id=%s", property_id)
             return None
         try:
             page_id = self.notion.sync(property_)
         except Exception:
+            logger.exception("Notion sync failed for property id=%s", property_id)
             updated = property_.model_copy(update={"sync_status": SyncStatus.FAILED})
             return self.repository.save(updated)
         updated = property_.model_copy(
             update={"sync_status": SyncStatus.SYNCED, "notion_page_id": page_id}
         )
+        logger.info("Notion sync completed for property id=%s", property_id)
         return self.repository.save(updated)

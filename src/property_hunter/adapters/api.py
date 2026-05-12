@@ -1,8 +1,10 @@
 """FastAPI adapter for local orchestration APIs."""
 
+import logging
+import time
 from pathlib import Path
 
-from fastapi import Depends, FastAPI, Header, HTTPException, Response, status
+from fastapi import Depends, FastAPI, Header, HTTPException, Request, Response, status
 
 from property_hunter.adapters.agents import create_listing_agents
 from property_hunter.adapters.kiut import KIUTUtilitySource
@@ -17,6 +19,8 @@ from property_hunter.application.use_cases import (
 from property_hunter.domain.export import properties_to_csv, properties_to_kml
 from property_hunter.domain.models import AnalyzedProperty, CapturedListing
 from property_hunter.settings import Settings, get_settings
+
+logger = logging.getLogger(__name__)
 
 
 def create_app(settings: Settings | None = None) -> FastAPI:
@@ -38,6 +42,20 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     export_use_case = ExportPropertiesUseCase(repository)
 
     app = FastAPI(title="PropertyHunter", version="0.1.0")
+
+    @app.middleware("http")
+    async def log_requests(request: Request, call_next):
+        start_time = time.perf_counter()
+        response = await call_next(request)
+        elapsed_ms = (time.perf_counter() - start_time) * 1000
+        logger.info(
+            "%s %s completed status=%s duration_ms=%.1f",
+            request.method,
+            request.url.path,
+            response.status_code,
+            elapsed_ms,
+        )
+        return response
 
     def require_token(
         authorization: str | None = Header(default=None),
@@ -63,6 +81,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     )
     def analyze(listing: CapturedListing) -> AnalyzedProperty:
         """Analyze a captured listing and store the result."""
+        logger.info("Received analyze request for source_site=%s", listing.source_site)
         return analyze_use_case.execute(listing)
 
     @app.get(
@@ -94,6 +113,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     def sync_notion(property_id: str) -> AnalyzedProperty:
         """Sync one property to Notion."""
         if not settings.notion_token or not settings.notion_database_id:
+            logger.info("Notion sync rejected because Notion is not configured")
             raise HTTPException(status_code=400, detail="Notion is not configured")
         use_case = SyncNotionUseCase(
             repository,

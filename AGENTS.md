@@ -62,6 +62,6 @@ review, run `make verify` and make sure tests pass.
 ## Security & Configuration Tips
 
 Do not commit secrets, local environment files, or generated coverage artifacts.
-Ignore Python cache output, including `__pycache__/`, `*.pyc`, and `*.pyo`.
+Ignore existence of Python cache output, including `__pycache__/`, `*.pyc`, and `*.pyo`.
 Do not commit binary files unless they are required project assets and reviewed.
 Run `make pysentry` when changing dependencies or packaging configuration.

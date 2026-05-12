@@ -8,6 +8,7 @@ from typing import Annotated
 import typer
 
 from property_hunter import __version__
+from property_hunter.logging import configure_logging
 from property_hunter.settings import get_settings
 
 app = typer.Typer(
@@ -51,12 +52,14 @@ def serve(
     if host != "127.0.0.1":
         raise typer.BadParameter("PropertyHunter only binds to 127.0.0.1 by default.")
     settings = get_settings().model_copy(update={"host": host, "port": port})
+    configure_logging(settings.log_level)
     uvicorn.run(create_app(settings), host=host, port=port)
 
 
 @app.command()
 def dashboard() -> None:
     """Launch the local Streamlit dashboard."""
+    configure_logging(get_settings().log_level)
     dashboard_path = Path(__file__).parent / "adapters" / "dashboard.py"
     subprocess.run(
         [sys.executable, "-m", "streamlit", "run", str(dashboard_path)],
@@ -76,7 +79,9 @@ def export(
     from property_hunter.adapters.sqlite import SQLitePropertyRepository
     from property_hunter.domain.export import properties_to_csv, properties_to_kml
 
-    repository = SQLitePropertyRepository(get_settings().db_path)
+    settings = get_settings()
+    configure_logging(settings.log_level)
+    repository = SQLitePropertyRepository(settings.db_path)
     properties = repository.list(limit=1000)
     match format_.lower():
         case "kml":
@@ -94,7 +99,9 @@ def userscript(output: Annotated[Path | None, typer.Option()] = None) -> None:
     """Print or write the browser userscript."""
     from property_hunter.adapters.userscript import render_userscript
 
-    userscript_source = render_userscript(get_settings())
+    settings = get_settings()
+    configure_logging(settings.log_level)
+    userscript_source = render_userscript(settings)
     if output is None:
         typer.echo(userscript_source)
         return

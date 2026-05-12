@@ -16,14 +16,15 @@ from property_hunter.settings import Settings
 FIXTURE_PATH = (
     Path(__file__).parents[2] / "fixtures" / "listings" / "otodom_pepowo_mpzp.json"
 )
+RUN_LLM_EVALS = os.getenv("PROPERTY_HUNTER_RUN_LLM_EVALS") == "1"
 
 
 @pytest.mark.llm_eval
 @pytest.mark.slow
+@pytest.mark.skipif(not RUN_LLM_EVALS, reason="live LLM evaluations are opt-in")
 def test_lm_studio_agents_extract_real_otodom_pepowo_listing() -> None:
     """Assess live LM Studio agents on a real Otodom listing snapshot."""
     # given
-   
     listing = _load_fixture_listing(FIXTURE_PATH)
     settings = Settings(
         agent_mode="llm",
